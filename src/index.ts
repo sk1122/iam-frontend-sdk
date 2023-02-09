@@ -1,54 +1,59 @@
-import axios from "axios"
-import { API_URL } from "./config"
+import axios from "axios";
+import { API_URL } from "./config";
+import { GenericError } from "./error";
 
 export class IAM {
-    apiKey = ""
+  apiKey = "";
+  serviceWorker: ServiceWorkerContainer | undefined = undefined;
 
-    constructor(apiKey: string) {
-        this.apiKey = apiKey
-    }
+  constructor(apiKey: string) {
+	if(!('serviceWorker' in window.navigator)) throw new GenericError("ServiceWorkerNotPresent", `serviceWorker is not present in window.navigator`)
 
-    public addEvent = async (eventName: string, eventData: any) => {
-        const project = await this.validateApiKey()
-        
-        const res = await axios({
-            url: `${API_URL}/events`,
-            data: {
-                id: project.id,
-                data: [
-                    eventData
-                ]
-            }
-        })
+	this.apiKey = apiKey;
+	this.serviceWorker = window.navigator.serviceWorker
 
-        const data = await res.data
+	this.serviceWorker.register("./events.js")
+  }
 
-        return {
-            status: true,
-            data
-        }
-    }
+  public addEvent = async (eventName: string, eventData: any) => {
+	const project = await this.validateApiKey();
 
-    public addUser = async (address: string, blockchains: string[]) => {
-        const project = await this.validateApiKey()
+	const res = await axios({
+	  url: `${API_URL}/events`,
+	  data: {
+		id: project.id,
+		data: [eventData],
+	  },
+	});
 
-        const res = await axios({
-          url: `${API_URL}/events`,
-          data: {
-            address,
-            blockchains
-          },
-        });
+	const data = await res.data;
 
-        const data = await res.data
+	return {
+	  status: true,
+	  data,
+	};
+  };
 
-        return {
-            status: true,
-            data
-        }
-    }
+  public addUser = async (address: string, blockchains: string[]) => {
+	const project = await this.validateApiKey();
 
-    private validateApiKey = async () => {
-        return {} as any
-    }
+	const res = await axios({
+	  url: `${API_URL}/events`,
+	  data: {
+		address,
+		blockchains,
+	  },
+	});
+
+	const data = await res.data;
+
+	return {
+	  status: true,
+	  data,
+	};
+  };
+
+  private validateApiKey = async () => {
+	return {} as any;
+  };
 }
